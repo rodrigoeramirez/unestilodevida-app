@@ -16,6 +16,9 @@ public class UsuarioDTO {
     @NotBlank(message = "El apellido no puede estar vacío")
     private String apellido;
 
+    @NotBlank(message = "El telefono no puede estar vacío")
+    private String telefono;
+
     @Email(message = "Debe ser un email válido")
     private String email;
 
