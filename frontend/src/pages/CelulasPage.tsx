@@ -14,6 +14,7 @@ import FilterListIcon from '@mui/icons-material/FilterList';
 import RestartAltIcon from '@mui/icons-material/RestartAlt';
 import AddIcon from '@mui/icons-material/Add';
 import { CelulaPanel } from '../components/CelulaPanel';
+import Swal from 'sweetalert2';
 
 export const CelulasPage: React.FC = () => {
   const celulaContext = React.useContext(CelulaContext);
@@ -78,9 +79,21 @@ export const CelulasPage: React.FC = () => {
 
   const handleAddCelula = async (celulaCreateDTO: CelulaCreateDTO) => {
     if (!celulaContext) return;
-    await celulaContext.crearCelula(celulaCreateDTO);
-    await refreshCelulas();
-    setOpenDialog(false);
+    try {
+      await celulaContext.crearCelula(celulaCreateDTO);
+      await refreshCelulas();
+      setOpenDialog(false);
+      Swal.fire({ title: "¡Creada!", text: "La celula fue creada exitosamente.", icon: "success", confirmButtonText: "Aceptar" });
+    } catch (error:any) {
+      if (error.response?.status == 400) {
+        Swal.fire({ title: "¡Datos invalidos!", text: "Revisa los datos ingresados, vuelve a intentarlo!", icon: "warning", confirmButtonText: "Aceptar" });
+      } else if (error.response?.status == 500) {
+        Swal.fire({ title: "¡Error!", text: "Ocurrió un error en el servidor. Por favor, comuniquese con Sistemas.", icon: "error", confirmButtonText: "Aceptar" });
+      } else {
+        Swal.fire({ title: "¡Error!", text: "Ocurrió un error al crear la celula. Por favor, comuniquese con Sistemas.", icon: "error", confirmButtonText: "Aceptar" });
+      }  
+    }
+    
   };
 
   const handleDiasChange = (event: any) => {

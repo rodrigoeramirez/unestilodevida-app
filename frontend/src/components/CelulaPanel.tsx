@@ -53,16 +53,33 @@ export const CelulaPanel: React.FC<Props> = ({ celula, onClose, refreshCelulas }
     return usuarioRol === 'ADMIN';
   };
 
-     // Mofifica celula
+  // Mofifica celula
   const handleEditCelula = async (celulaUpdateDTO: CelulaCreateDTO) => {
   if (!celulaContext) return;
-  const celulaEditada = await celulaContext.actualizarCelula(celula.id, celulaUpdateDTO);
-  await refreshCelulas(); // refresh desde CelulasPage
-  setOpenEditar(false);
-  console.log(celulaEditada);
-   // Actualizar el panel con los datos nuevos (si el ID coincide)
-  if ((celulaEditada!=null) && (celulaEditada.id === celula.id)) {
-    Object.assign(celula, celulaEditada); // actualiza los datos mostrados sin recargar
+
+  try {
+    const celulaEditada = await celulaContext.actualizarCelula(celula.id, celulaUpdateDTO);
+    if (celulaEditada && celulaEditada.id === celula.id) {
+      // Actualiza el estado local
+      Object.assign(celula, celulaEditada);
+      await refreshCelulas(); // Refresca la lista
+      setOpenEditar(false);
+      Swal.fire({
+        title: "¡Modificada!",
+        text: "La célula fue modificada exitosamente.",
+        icon: "success",
+        confirmButtonText: "Aceptar"
+      });
+  } 
+  } catch (error: any) {
+    setOpenEditar(false);
+     if (error.response?.status === 400) {
+        Swal.fire("Datos inválidos", "Revisá los campos ingresados.", "warning");
+      } else if (error.response?.status === 500) {
+        Swal.fire("Error del servidor", "Ocurrió un problema interno. Por favor, comuniquese con Sistemas", "error");
+      } else {
+        Swal.fire("Error", "No se pudo modificar la célula. Por favor, comuniquese con Sistemas", "error");
+      }
   }
 };
 
@@ -176,18 +193,22 @@ export const CelulaPanel: React.FC<Props> = ({ celula, onClose, refreshCelulas }
                 description="Esta acción marcará la célula como dada de baja y liberará al líder y timoteo."
                 onCancel={() => setOpenEliminar(false)}
                 onConfirm={async () => {
-                  if (!celulaContext) return;
-                  await celulaContext.eliminarCelula(celula.id);
-                  await refreshCelulas();
-                  setOpenEliminar(false);
-                  onClose();
-                  Swal.fire({
-                    title: "¡Baja!",
-                    text: "La celula fue dada de baja correctamente.",
-                    icon: "success",
-                    confirmButtonText: "Aceptar"
-
-                  });
+                  if (!celulaContext) return;   
+                    try {
+                      const mensaje = await celulaContext.eliminarCelula(celula.id);
+                      await refreshCelulas();
+                      setOpenEliminar(false);
+                      onClose();
+                      Swal.fire({ title: "Baja", text: mensaje, icon: "success", confirmButtonText: "Aceptar"});
+                    } catch (error: any) {
+                      setOpenEliminar(false);
+                      if (error.response?.status == 500) {
+                        Swal.fire({title:"Error en el servidor", text:error.response.data, icon:"error", confirmButtonText:"Aceptar"});
+                      } else {
+                        Swal.fire("Error", "No se pudo eliminar la célula. Por favor, comuniquese con Sistemas", "error");
+                      }
+                    }
+                    
                 }}
               />
 

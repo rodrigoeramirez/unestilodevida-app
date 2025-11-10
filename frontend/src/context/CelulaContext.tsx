@@ -62,7 +62,7 @@ interface CelulaContextValue {
   getCelulaById: (id: number) => Promise<Celula | null>;             // GET /celulas/:id
   crearCelula: (data: CelulaCreateDTO) => Promise<Celula | null>; // POST /celulas/create
   actualizarCelula: (id: number, data: Partial<CelulaCreateDTO>) => Promise<Celula | null>; // PATCH /celulas/update/:id
-  eliminarCelula: (id: number) => Promise<boolean>; // DELETE /celulas/delete/:id
+  eliminarCelula: (id: number) => Promise<string>; // DELETE /celulas/delete/:id
   getDias:() => Promise<Dias[]>;
   getGeneros:() =>Promise<Generos[]>  
   usuarioLibre:(id:number) => Promise<string | null>;          
@@ -106,7 +106,7 @@ export const CelulaProvider: React.FC<UsuarioProviderProps> = ({ children }) => 
       return res.data;
     } catch (error) {
       console.error('Error creando celula:', error);
-      return null;
+      throw error; // Permite que  el erro viaje hacia arriba para mostarlo en la vista
     }
   };
 
@@ -119,20 +119,20 @@ export const CelulaProvider: React.FC<UsuarioProviderProps> = ({ children }) => 
       return res.data;
     } catch (error) {
       console.error('Error actualizando celula:', error);
-      return null;
+      throw error; // Permite que el error viaje hacia arriba
     }
   };
 
   // -------------------------------------------------------
   // 🔹 Eliminar una celula
   // -------------------------------------------------------
-  const eliminarCelula = async (id: number): Promise<boolean> => {
+  const eliminarCelula = async (id: number): Promise<string> => {
     try {
-      await celulaApi.delete(id);
-      return true; // Si no hay error, devolvemos true
+      const res = await celulaApi.delete(id);
+      return res.data; // Si no hay error, devolvemos true
     } catch (error) {
       console.error('Error eliminando celula:', error);
-      return false;
+      throw error;
     }
   };
     // -------------------------------------------------------
