@@ -28,7 +28,7 @@ public class CelulaController {
     }
 
     @DeleteMapping("/delete/{id}")
-    public ResponseEntity<String> deleteCelula (@PathVariable Long id) {
+    public ResponseEntity<?> deleteCelula (@PathVariable Long id) {
         return celulaService.deleteCelula(id);
     }
 

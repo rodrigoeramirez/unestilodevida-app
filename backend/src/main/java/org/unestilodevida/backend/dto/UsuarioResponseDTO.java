@@ -2,6 +2,8 @@ package org.unestilodevida.backend.dto;
 
 import lombok.Data;
 
+import java.util.Date;
+
 @Data
 public class UsuarioResponseDTO {
     private Long id;
@@ -11,4 +13,5 @@ public class UsuarioResponseDTO {
     private String telefono;
     private String fotoPerfil;
     private String rol;
+    private Date fechaBaja;
 }

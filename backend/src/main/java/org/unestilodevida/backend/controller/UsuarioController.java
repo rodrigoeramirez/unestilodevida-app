@@ -6,13 +6,16 @@ import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.unestilodevida.backend.dto.ClaveUpdateDTO;
 import org.unestilodevida.backend.dto.UsuarioDTO;
 import org.unestilodevida.backend.dto.UsuarioResponseDTO;
+import org.unestilodevida.backend.dto.UsuarioUpdateDTO;
 import org.unestilodevida.backend.model.Usuario;
 import org.unestilodevida.backend.service.UsuarioService;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/usuarios")
@@ -22,6 +25,14 @@ public class UsuarioController {
 
     public UsuarioController(UsuarioService usuarioService) {
         this.usuarioService = usuarioService;
+    }
+
+    @PostMapping("/updateClave/{id}")
+    public ResponseEntity<?> updateClave(
+            @PathVariable Long id,
+            @RequestBody ClaveUpdateDTO datos) {
+
+        return usuarioService.updateClave(id, datos);
     }
 
     @PostMapping("/create")
@@ -39,6 +50,9 @@ public class UsuarioController {
     public List<UsuarioResponseDTO> getUsuarios() {
         return usuarioService.getUsuarios();
     }
+
+    @GetMapping ("/{id}")
+    public Optional<UsuarioResponseDTO> getUsuarioById(@PathVariable Long id) {return usuarioService.getUsuarioById(id);}
 
     @GetMapping ("/roles")
     public List<Map<String, String>> getRoles() { return usuarioService.getRoles(); }
@@ -58,8 +72,26 @@ public class UsuarioController {
         return  usuarioService.getTimoteos();
     }
 
+    @PutMapping("/update/{id}")
+    public ResponseEntity<?> updateUsuario(
+            @PathVariable Long id,
+            @RequestPart("usuarioDTO") String usuarioJson,
+            @RequestPart(value = "foto", required = false) MultipartFile foto
+    ) throws JsonProcessingException {
+
+        ObjectMapper mapper = new ObjectMapper();
+        UsuarioUpdateDTO usuarioDTO = mapper.readValue(usuarioJson, UsuarioUpdateDTO.class);
+
+        Optional<UsuarioResponseDTO> actualizado = usuarioService.updateUsuario(id, usuarioDTO, foto);
+        if (actualizado.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(actualizado.get());
+    }
+
+
     @DeleteMapping("/delete/{id}")
-    public ResponseEntity<String> deleteCelula (@PathVariable Long id) {
+    public ResponseEntity<String> deleteUsuario (@PathVariable Long id) {
         return usuarioService.deleteUsuario(id);
     }
 }

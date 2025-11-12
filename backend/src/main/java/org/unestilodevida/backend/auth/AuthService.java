@@ -31,6 +31,15 @@ public class AuthService {
     public AuthResponse login(LoginRequest request) {
         String baseUrl = req.getScheme() + "://" + req.getServerName() + ":" + req.getServerPort()+"/usuarios_fotos_perfil/";
         try {
+            // 1️⃣ Buscar usuario por email
+            Usuario usuario = usuarioRepository.findByEmail(request.getEmail())
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Email o clave incorrectos"));
+
+            // 2️⃣ Verificar si está dado de baja
+            if (usuario.getFechaBaja() != null) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "El usuario ha sido dado de baja");
+            }
+
             // Intenta autenticar al usuario
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(request.getEmail(), request.getClave())

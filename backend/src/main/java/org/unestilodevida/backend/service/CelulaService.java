@@ -4,6 +4,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -133,10 +134,12 @@ public class CelulaService {
             celulaExistente.setLider(nuevoLider);
         }
 
-        if (celulaDTO.getTimoteoId() != 0) {
+        if (celulaDTO.getTimoteoId() != null && celulaDTO.getTimoteoId() != 0 ) {
             Usuario nuevoTimoteo = usuarioRepository.findById(celulaDTO.getTimoteoId())
                     .orElseThrow(() -> new RuntimeException("Timoteo no encontrado con ID: " + celulaDTO.getTimoteoId()));
             celulaExistente.setTimoteo(nuevoTimoteo);
+        } else {
+            celulaExistente.setTimoteo(null);
         }
 
         Celula actualizada = celulaRepository.save(celulaExistente);
@@ -233,14 +236,26 @@ public class CelulaService {
     }
 
     @Transactional
-    public ResponseEntity<String> deleteCelula(Long id) {
-        Celula celulaBaja = celulaRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Célula no encontrada con ID: " + id));
-        celulaBaja.setFechaBaja(new Date());
-        celulaBaja.setLider(null);
-        celulaBaja.setTimoteo(null);
-        celulaRepository.save(celulaBaja);
-        return ResponseEntity.ok("Celula eliminada con exito.");
+    public ResponseEntity<?> deleteCelula(Long id) {
+        try {
+            Celula celulaBaja = celulaRepository.findById(id)
+                    .orElseThrow(() -> new RuntimeException("Célula no encontrada con ID: " + id));
+
+            celulaBaja.setFechaBaja(new Date());
+            celulaBaja.setLider(null);
+            celulaBaja.setTimoteo(null);
+
+            celulaRepository.save(celulaBaja);
+
+            return ResponseEntity.ok("Célula dada de baja con éxito.");
+
+        } catch (Exception e) {
+            // Si llega acá, Spring automáticamente hace rollback porque se lanzó una excepción
+            System.err.println("Error al eliminar célula: " + e.getMessage());
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Ocurrió un problema al modificar la célula. Por favor, comuniquese con Sistemas.");
+        }
     }
 
 }
