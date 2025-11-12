@@ -9,139 +9,110 @@ import {
   type Navigation,
 } from '@toolpad/core/AppProvider';
 import { DashboardLayout } from '@toolpad/core/DashboardLayout';
-import { DemoProvider, useDemoRouter } from '@toolpad/core/internal';
+import { useDemoRouter } from '@toolpad/core/internal';
 import { DashboardPage } from '../pages/DashboardPage';
 import { UsuariosPage } from '../pages/UsuariosPage';
 import { CelulasPage } from '../pages/CelulasPage';
-import { UsuarioProvider } from '../context/UsuarioContext';
-import { CelulaProvider } from '../context/CelulaContext';
 import { useNavigate } from 'react-router-dom';
+import { UserIcon } from 'lucide-react';
+import { EditarMisDatosPage } from '../pages/EditarMisDatosPage';
+import { CambiarClavePage } from '../pages/CambiarClavePage';
+import { ProtectedRoute } from './ProtectedRoute';
 
 const NAVIGATION: Navigation = [
+  { segment: 'dashboard', title: 'Dashboard', icon: <DashboardIcon /> },
+  { segment: 'usuarios', title: 'Usuarios', icon: <GroupAddIcon /> },
+  { segment: 'celulas', title: 'Células', icon: <HubIcon /> },
   {
-    segment: 'dashboard',
-    title: 'Dashboard',
-    icon: <DashboardIcon />,
-  },
-    {
-    segment: 'usuarios',
-    title: 'Usuarios',
-    icon: <GroupAddIcon />,
-  },
-  {
-    segment: 'celulas',
-    title: 'Celulas',
-    icon: <HubIcon />,
+    segment: 'mi-cuenta',
+    title: 'Mi Cuenta',
+    icon: <UserIcon />,
+    children: [
+      { segment: 'modificar-datos', title: 'Modificar mis datos' },
+      { segment: 'cambiar-clave', title: 'Cambiar contraseña' },
+    ],
   },
 ];
 
 const demoTheme = createTheme({
-  cssVariables: {
-    colorSchemeSelector: 'data-toolpad-color-scheme',
-  },
+  cssVariables: { colorSchemeSelector: 'data-toolpad-color-scheme' },
   colorSchemes: { light: true, dark: true },
-  breakpoints: {
-    values: {
-      xs: 0,
-      sm: 600,
-      md: 600,
-      lg: 1200,
-      xl: 1536,
-    },
-  },
 });
 
-function DemoPageContent({ pathname }: { pathname: string }) {
-  switch (pathname) {
-    case '/dashboard':
-      return <DashboardPage />;
-    case '/usuarios':
-      return <UsuarioProvider><UsuariosPage /></UsuarioProvider>;
-    case '/celulas':
-      return <UsuarioProvider><CelulaProvider><CelulasPage /></CelulaProvider></UsuarioProvider>;
-    default:
-      return <DashboardPage />; // fallback
-  }
-}
-
-interface DemoProps {
-  /**
-   * Injected by the documentation to work in an iframe.
-   * Remove this when copying and pasting into your project.
-   */
-  window?: () => Window;
-}
-
-export default function DashboardLayoutAccount(props: DemoProps) {
-  const { window } = props;
+export default function DashboardLayoutAccount() {
   const navigate = useNavigate();
-  
-
+  const router = useDemoRouter('/dashboard');
   const [session, setSession] = React.useState<Session | null>(null);
 
-  // ✅ Manejo de sesión con datos desde localStorage
-  const authentication = React.useMemo(() => {
-    const nombreUsuario = `${localStorage.getItem("usuarioNombre") || ""} ${localStorage.getItem("usuarioApellido") || ""}`.trim();
-    const emailUsuario = localStorage.getItem("usuarioEmail") || "";
-    const fotoPerfilUsuario = localStorage.getItem("fotoPerfil") || "";
+  // Manejo de sesión
+  const authentication = React.useMemo(() => ({
+    signIn: () => {
+      setSession({
+        user: {
+          name: `${localStorage.getItem('usuarioNombre') || ''} ${localStorage.getItem('usuarioApellido') || ''}`.trim(),
+          email: localStorage.getItem('usuarioEmail') || '',
+          image: localStorage.getItem('fotoPerfil') || '',
+        },
+      });
+    },
+    signOut: () => {
+      localStorage.clear();
+      setSession(null);
+      navigate('/');
+    },
+  }), [navigate]);
 
-    return {
-      signIn: () => {
-        setSession({
-          user: {
-            name: nombreUsuario,
-            email: emailUsuario,
-            image: fotoPerfilUsuario,
-          },
-        });
-      },
-      signOut: () => {
-        localStorage.clear();
-        setSession(null);
-        navigate("/"); // redirige al login
-      },
-    };
-  }, [navigate]);
-
-  // ✅ Inicializa sesión al montar
+  // Inicializa sesión
   React.useEffect(() => {
     authentication.signIn();
   }, [authentication]);
 
-  const router = useDemoRouter('/dashboard');
-
-  // Remove this const when copying and pasting into your project.
-  const demoWindow = window !== undefined ? window() : undefined;
+  // Renderizado de páginas
+  const DemoPageContent = ({ pathname }: { pathname: string }) => {
+    switch (pathname) {
+      case '/dashboard':
+        return <ProtectedRoute  rolesPermitidos={["ADMIN","LIDER","TIMOTEO"]}><DashboardPage /></ProtectedRoute>;
+        ;
+      case '/usuarios':
+        return <ProtectedRoute  rolesPermitidos={["ADMIN"]}> <UsuariosPage /></ProtectedRoute>;
+      case '/celulas':
+        return <ProtectedRoute  rolesPermitidos={["ADMIN","LIDER","TIMOTEO"]}><CelulasPage /></ProtectedRoute>;
+      case '/mi-cuenta/modificar-datos':
+        return (
+           <ProtectedRoute  rolesPermitidos={["ADMIN","LIDER","TIMOTEO"]}><EditarMisDatosPage id={Number(localStorage.getItem("usuarioId"))} /></ProtectedRoute>
+        );
+        case '/mi-cuenta/cambiar-clave':
+        return (
+           <ProtectedRoute  rolesPermitidos={["ADMIN","LIDER","TIMOTEO"]}><CambiarClavePage id={Number(localStorage.getItem("usuarioId"))} /></ProtectedRoute>
+        );
+      default:
+        return <DashboardPage />;
+    }
+  };
 
   return (
-    // Remove this provider when copying and pasting into your project.
-    <DemoProvider window={demoWindow}>
-      {/* preview-start */}
-      <AppProvider
-        session={session}
-        authentication={authentication}
-        navigation={NAVIGATION}
-        router={router}
-        theme={demoTheme}
-        window={demoWindow}
+    <AppProvider
+      session={session}
+      authentication={authentication}
+      navigation={NAVIGATION}
+      router={router}
+      theme={demoTheme}
+    >
+      <DashboardLayout
+        branding={{
+          logo: (
+            <img
+              src="src/assets/logo_unev.png"
+              alt="Ministerio Un Estilo de Vida"
+              style={{ width: 50, height: 50, borderRadius: '50%' }}
+            />
+          ),
+          title: 'Centro de Administración – Un Estilo de Vida',
+          homeUrl: '/dashboard',
+        }}
       >
-        <DashboardLayout
-            branding={{
-                logo: (
-                <img
-                    src="src\assets\logo_unev.png" // tu logo (podés poner una URL o ruta local)
-                    alt="Ministerio Un Estilo de Vida"
-                    style={{ width: 50, height: 50, borderRadius: '50%' }}
-                />
-                ),
-                title: 'Centro de Administración – Un Estilo de Vida', // el texto que reemplaza “Toolpad”
-                homeUrl: '/dashboard', // adónde va cuando hacés clic
-            }}
-            >
-            <DemoPageContent pathname={router.pathname} />
-        </DashboardLayout>
-      </AppProvider>
-      {/* preview-end */}
-    </DemoProvider>
+        <DemoPageContent pathname={router.pathname} />
+      </DashboardLayout>
+    </AppProvider>
   );
 }

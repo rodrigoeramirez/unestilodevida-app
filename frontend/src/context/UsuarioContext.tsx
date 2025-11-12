@@ -11,6 +11,7 @@ export interface Usuario {
   telefono: string;
   fotoPerfil:string;
   rol: string;
+  fechaBaja?: Date | null;
 }
 
 export interface Rol {
@@ -52,10 +53,11 @@ interface UsuarioContextValue {
   getTimoteos: () => Promise<Usuario[]>;                              // GET /usuarios/timoteos
   getUsuarioById: (id: number) => Promise<Usuario | null>;             // GET /usuarios/:id
   crearUsuario: (formData: FormData) => Promise<Usuario | null>; // POST /usuarios/create
-  actualizarUsuario: (id: number, data: Partial<Usuario>) => Promise<Usuario | null>; // PUT /usuarios/update/:id
+  actualizarUsuario: (id: number, formData: FormData) => Promise<Usuario | null>;
   eliminarUsuario: (id: number) => Promise<boolean>; // DELETE /usuarios/delete/:id
   getRoles: () => Promise<Rol[]>;
-  existByEmail:(email: string) =>Promise<boolean | null>;               
+  existByEmail:(email: string) =>Promise<boolean | null>;
+  updateClave: (id: number, data: { claveActual: string; nuevaClave: string }) => Promise<void>;               
 }
 
 // ---------------------------------------------------------
@@ -144,7 +146,7 @@ export const UsuarioProvider: React.FC<UsuarioProviderProps> = ({ children }) =>
       return res.data;
     } catch (error) {
       console.error('Error obteniendo usuario:', error);
-      return null;
+      throw error;
     }
   };
 
@@ -157,22 +159,23 @@ export const UsuarioProvider: React.FC<UsuarioProviderProps> = ({ children }) =>
     return res.data;
   } catch (error) {
     console.error('Error creando usuario:', error);
-    return null;
+    throw error;
   }
 };
 
   // -------------------------------------------------------
   // 🔹 Actualizar un usuario existente
   // -------------------------------------------------------
-  const actualizarUsuario = async (id: number, data: Partial<Usuario>): Promise<Usuario | null> => {
-    try {
-      const res = await usuarioApi.update(id, data);
-      return res.data;
-    } catch (error) {
-      console.error('Error actualizando usuario:', error);
-      return null;
-    }
-  };
+  const actualizarUsuario = async (id: number, formData: FormData): Promise<Usuario | null> => {
+  try {
+    const res = await usuarioApi.update(id, formData);
+    return res.data;
+  } catch (error) {
+    console.error('Error actualizando usuario:', error);
+    throw error;
+  }
+};
+
 
   // -------------------------------------------------------
   // 🔹 Eliminar un usuario
@@ -183,7 +186,19 @@ export const UsuarioProvider: React.FC<UsuarioProviderProps> = ({ children }) =>
       return true; // Si no hay error, devolvemos true
     } catch (error) {
       console.error('Error eliminando usuario:', error);
-      return false;
+      throw error;
+    }
+  };
+
+   // -------------------------------------------------------
+  // 🔐 Nueva función: Cambiar clave
+  // -------------------------------------------------------
+  const updateClave = async (id: number, data: { claveActual: string; nuevaClave: string }): Promise<void> => {
+    try {
+      await usuarioApi.updateClave(id, data);
+    } catch (error) {
+      console.error('Error actualizando la clave:', error);
+      throw error;
     }
   };
 
@@ -194,7 +209,7 @@ export const UsuarioProvider: React.FC<UsuarioProviderProps> = ({ children }) =>
   // Así, cualquier componente hijo podrá usarlas llamando al Context.
   return (
     <UsuarioContext.Provider
-      value={{ getUsuarios, getUsuarioById, crearUsuario, actualizarUsuario, eliminarUsuario, getRoles, existByEmail, getLideres, getTimoteos }}
+      value={{ getUsuarios, getUsuarioById, crearUsuario, actualizarUsuario, eliminarUsuario, getRoles, existByEmail, getLideres, getTimoteos, updateClave, }}
     >
       {children}
     </UsuarioContext.Provider>

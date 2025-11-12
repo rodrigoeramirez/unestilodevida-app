@@ -5,11 +5,10 @@ import EditIcon from '@mui/icons-material/Edit';
 import { DataGrid, GridActionsCellItem } from '@mui/x-data-grid';
 import type { GridColDef } from '@mui/x-data-grid';
 
-// Defino una interfaz para tipar las props del componente Tabla y asegurar que reciba los datos y funciones esperadas.
 interface TablaProps {
   data: any[];
-  onRowDelete?: (id: string | number) => Promise<void> | void;
-  onRowUpdate?: (id: string | number, updatedRow: any) => Promise<void> | void;
+  onRowDelete?: (id: number) => Promise<void> | void;
+  onRowUpdate?: (id: number) => Promise<void> | void;
   height?: number;
 }
 
@@ -29,31 +28,30 @@ export default function Tabla({ data, onRowDelete, onRowUpdate, height = 500 }: 
       .map((key) => ({
         field: key,
         headerName: key.charAt(0).toUpperCase() + key.slice(1),
-        width: 180,
+        flex: 1, // hace que se expanda automáticamente
+        minWidth: 150, // evita que colapse en pantallas pequeñas
       }));
   };
 
-  // Columna de acciones (Editar y Eliminar)
+  // Columna de acciones
   const actionsColumn: GridColDef = {
     field: 'actions',
     type: 'actions',
     headerName: 'Acciones',
-    width: 120,
+    flex: 0.5,
+    minWidth: 120,
     getActions: ({ id }) => [
       <GridActionsCellItem
         key="edit"
         icon={<EditIcon />}
         label="Editar"
-        onClick={() => {
-          const row = rows.find((r) => r.id === id);
-          if (onRowUpdate && row) onRowUpdate(id, row);
-        }}
+        onClick={() => onRowUpdate && onRowUpdate(Number(id))}
       />,
       <GridActionsCellItem
         key="delete"
         icon={<DeleteIcon />}
         label="Eliminar"
-        onClick={() => onRowDelete && onRowDelete(id)}
+        onClick={() => onRowDelete && onRowDelete(Number(id))}
       />,
     ],
   };
@@ -61,12 +59,47 @@ export default function Tabla({ data, onRowDelete, onRowUpdate, height = 500 }: 
   const columns = [...generateColumns(), actionsColumn];
 
   return (
-    <Box sx={{ height, width: '100%' }}>
-      <DataGrid
-        rows={rows}
-        columns={columns}
-        disableRowSelectionOnClick
-      />
+    <Box
+      sx={{
+        width: '100%',
+        overflowX: 'auto', // permite scroll horizontal en móviles
+        borderRadius: 2,
+        boxShadow: 1,
+        backgroundColor: 'background.paper',
+        p: { xs: 1, sm: 2 },
+        '& .MuiDataGrid-root': {
+          border: 'none',
+        },
+        '& .MuiDataGrid-cell': {
+          whiteSpace: 'nowrap',
+          textOverflow: 'ellipsis',
+          overflow: 'hidden',
+        },
+        '& .MuiDataGrid-columnHeaders': {
+          backgroundColor: '#f5f5f5',
+          fontWeight: 'bold',
+        },
+      }}
+    >
+      <Box
+        sx={{
+          width: '100%',
+          minWidth: { xs: '600px', sm: 'auto' }, // evita que se rompa en pantallas muy chicas
+          height,
+        }}
+      >
+        <DataGrid
+          rows={rows}
+          columns={columns}
+          disableRowSelectionOnClick
+          autoHeight={false}
+          density="comfortable"
+          sx={{
+            width: '100%',
+            fontSize: { xs: '0.8rem', sm: '0.9rem' }, // ajusta texto en móviles
+          }}
+        />
+      </Box>
     </Box>
   );
 }

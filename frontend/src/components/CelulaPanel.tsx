@@ -8,7 +8,6 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import { EditarCelulaFormPage } from "../pages/EditarCelulaFormPage";
 import { CelulaContext } from "../context/CelulaContext";
-import { ConfirmDialog } from "./ConfirmDialog";
 import Swal  from "sweetalert2";
 
 interface Props {
@@ -24,7 +23,6 @@ export const CelulaPanel: React.FC<Props> = ({ celula, onClose, refreshCelulas }
   const usuarioRol = localStorage.getItem("usuarioRol");
   const usuarioId = localStorage.getItem("usuarioId");
   const [openEditar, setOpenEditar] = React.useState(false);
-  const [openEliminar, setOpenEliminar] = React.useState(false);
   const celulaContext = React.useContext(CelulaContext);
 
   // Funcion para verificar si el usaurio logeado tiene permisos para Editar la celula
@@ -38,7 +36,7 @@ export const CelulaPanel: React.FC<Props> = ({ celula, onClose, refreshCelulas }
     
 
     // Líder o Timoteo solo su propia célula
-    if ((usuarioRol === 'LIDER' || usuarioRol === 'TIMOTEO') && (celula.lider.id === Number(usuarioId)) ||celula.timoteo.id === Number(usuarioId)) {
+    if ((usuarioRol === 'LIDER' || usuarioRol === 'TIMOTEO') && (celula.lider?.id === Number(usuarioId)) || celula.timoteo?.id === Number(usuarioId)) {
       return true;
     }
 
@@ -167,7 +165,33 @@ export const CelulaPanel: React.FC<Props> = ({ celula, onClose, refreshCelulas }
             <Button
               variant="contained"
               startIcon={<DeleteIcon />}
-              onClick={() => setOpenEliminar(true)}
+              onClick={async () => {
+                const result = await Swal.fire({
+                    title: "¿Dar de baja celula?",
+                    text: "Estás por dar de baja esta celula. ¿Deseas continuar?",
+                    icon: "warning",
+                    showCancelButton: true,
+                    confirmButtonText: "Dar de baja",
+                    cancelButtonText: "Cancelar",
+                    confirmButtonColor: "#d33",
+                    cancelButtonColor: "#3085d6",
+                  });
+                  if (result.isConfirmed) {
+                    if (!celulaContext) return;   
+                    try {
+                      const mensaje = await celulaContext.eliminarCelula(celula.id);
+                      await refreshCelulas();
+                      onClose();
+                      Swal.fire({ title: "Baja", text: mensaje, icon: "success", confirmButtonText: "Aceptar"});
+                    } catch (error: any) {
+                      if (error.response?.status == 500) {
+                        Swal.fire({title:"Error en el servidor", text:error.response.data, icon:"error", confirmButtonText:"Aceptar"});
+                      } else {
+                        Swal.fire("Error", "No se pudo eliminar la célula. Por favor, comuniquese con Sistemas", "error");
+                      }
+                    }
+                  }
+              }}
               sx={{
                 textTransform: 'none',
                 fontWeight: 'bold',
@@ -185,32 +209,6 @@ export const CelulaPanel: React.FC<Props> = ({ celula, onClose, refreshCelulas }
               Eliminar
             </Button>
           )}
-
-              {/* Dialogo para confirmar eliminación */}
-              <ConfirmDialog
-                open={openEliminar}
-                title={`¿Seguro que deseas eliminar la célula ${celula.nombre}?`}
-                description="Esta acción marcará la célula como dada de baja y liberará al líder y timoteo."
-                onCancel={() => setOpenEliminar(false)}
-                onConfirm={async () => {
-                  if (!celulaContext) return;   
-                    try {
-                      const mensaje = await celulaContext.eliminarCelula(celula.id);
-                      await refreshCelulas();
-                      setOpenEliminar(false);
-                      onClose();
-                      Swal.fire({ title: "Baja", text: mensaje, icon: "success", confirmButtonText: "Aceptar"});
-                    } catch (error: any) {
-                      setOpenEliminar(false);
-                      if (error.response?.status == 500) {
-                        Swal.fire({title:"Error en el servidor", text:error.response.data, icon:"error", confirmButtonText:"Aceptar"});
-                      } else {
-                        Swal.fire("Error", "No se pudo eliminar la célula. Por favor, comuniquese con Sistemas", "error");
-                      }
-                    }
-                    
-                }}
-              />
 
               {/* Dialogo para editar celula */}
               <Dialog open={openEditar} onClose={() => setOpenEditar(false)}>
@@ -283,7 +281,7 @@ export const CelulaPanel: React.FC<Props> = ({ celula, onClose, refreshCelulas }
 
         {celula.qrWhatsapp && (
           <div className="text-center p-6 rounded-2xl border-2 border-dashed" style={{ borderColor: currentColors.medium }}>
-            <p className="text-sm font-medium text-gray-700 mb-3">Escanea para unirte al grupo</p>
+            <p className="text-sm font-medium text-gray-700 mb-3">Escanea para chatear con el ldier</p>
             <div className="inline-block p-3 rounded-2xl" style={{ backgroundColor: currentColors.light }}>
               <img src={`data:image/png;base64,${celula.qrWhatsapp}`} alt="QR WhatsApp" className="w-32 h-32 mx-auto rounded-lg shadow-sm" />
             </div>

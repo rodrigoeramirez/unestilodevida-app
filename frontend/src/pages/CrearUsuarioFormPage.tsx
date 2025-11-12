@@ -8,12 +8,11 @@ import FormControl from '@mui/material/FormControl';
 import InputLabel from '@mui/material/InputLabel';
 import Select from '@mui/material/Select';
 import MenuItem from '@mui/material/MenuItem';
-import { UsuarioContext, type Rol, type Usuario } from "../context/UsuarioContext";
+import Slider from '@mui/material/Slider';
+import Dialog from '@mui/material/Dialog';
 import Cropper from 'react-easy-crop';
 import getCroppedImg from '../utils/cropImage';
-import Slider from '@mui/material/Slider';
-import { Dialog } from '@mui/material';
-
+import { UsuarioContext, type Rol, type Usuario } from "../context/UsuarioContext";
 
 interface CrearUsuarioFormPageProps {
   onClose: () => void;
@@ -21,8 +20,9 @@ interface CrearUsuarioFormPageProps {
 }
 
 export const CrearUsuarioFormPage: React.FC<CrearUsuarioFormPageProps> = ({ onClose, onSubmit }) => {
-  
-  const [usuario, setUsuario] = React.useState<Omit<Usuario, 'id'>>({ nombre: '', apellido: '', email: '', clave: '', fotoPerfil: '', telefono: '', rol: ''});
+  const [usuario, setUsuario] = React.useState<Omit<Usuario, 'id'>>({
+    nombre: '', apellido: '', email: '', clave: '', fotoPerfil: '', telefono: '', rol: ''
+  });
   const [repetirClave, setRepetirClave] = React.useState('');
   const [errores, setErrores] = React.useState<string[]>([]);
   const [roles, setRoles] = React.useState<Rol[]>([]);
@@ -32,7 +32,6 @@ export const CrearUsuarioFormPage: React.FC<CrearUsuarioFormPageProps> = ({ onCl
   const [openCropper, setOpenCropper] = React.useState(false);
   const [selectedImage, setSelectedImage] = React.useState<string | null>(null);
 
-  // Configuración del cropper
   const [crop, setCrop] = React.useState({ x: 0, y: 0 });
   const [zoom, setZoom] = React.useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = React.useState<any>(null);
@@ -41,7 +40,6 @@ export const CrearUsuarioFormPage: React.FC<CrearUsuarioFormPageProps> = ({ onCl
     setCroppedAreaPixels(croppedAreaPixels);
   }, []);
 
-  // Abrir cropper al seleccionar imagen
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files?.[0]) {
       const file = e.target.files[0];
@@ -54,7 +52,6 @@ export const CrearUsuarioFormPage: React.FC<CrearUsuarioFormPageProps> = ({ onCl
     }
   };
 
-  // Recortar y guardar la imagen
   const handleCropSave = async () => {
     try {
       const croppedBlob = await getCroppedImg(selectedImage!, croppedAreaPixels);
@@ -67,23 +64,20 @@ export const CrearUsuarioFormPage: React.FC<CrearUsuarioFormPageProps> = ({ onCl
     }
   };
 
-  // Llama al endpoint getRoles() y carga la variable roles para mostrarlo en el select del formulario
   React.useEffect(() => {
-      if (!usuarioContext) return;
+    if (!usuarioContext) return;
     const fetchRoles = async () => {
       const data = await usuarioContext.getRoles();
       setRoles(data);
     };
     fetchRoles();
-    }, [usuarioContext]);
-    
-  // Funcion que hace la consulta al backend mediante existByEmail() devuelve true si ya existe en la DB y false en caso contario.
-  async function existeEmail(email: string) {
-      if (!usuarioContext) return null;
-      return  await usuarioContext.existByEmail(email);
-  }  
+  }, [usuarioContext]);
 
-  //Validación de formulario
+  async function existeEmail(email: string) {
+    if (!usuarioContext) return null;
+    return await usuarioContext.existByEmail(email);
+  }
+
   const validarUsuario = async (): Promise<string[]> => {
     const errores: string[] = [];
 
@@ -94,7 +88,6 @@ export const CrearUsuarioFormPage: React.FC<CrearUsuarioFormPageProps> = ({ onCl
       errores.push('El formato del email no es válido.');
     else {
       const existe = await existeEmail(usuario.email);
-      console.log("Este es el resultado: "+ existe)
       if (existe) errores.push("El email ya está registrado");
       else if (existe === null) errores.push("No se pudo verificar el email");
     }
@@ -111,31 +104,20 @@ export const CrearUsuarioFormPage: React.FC<CrearUsuarioFormPageProps> = ({ onCl
     return errores;
   };
 
-  // Actualiza dinámicamente el usuario, teniendo en cuenta el cambio del input y su valor actual
   const handleChange = (e) => {
-  const campo = e.target.name;   // cuál campo cambió
-  const valor = e.target.value;  // nuevo valor
-
-  setUsuario((prevUsuario) => ({
-    ...prevUsuario,  // copia el anterior
-    [campo]: valor   // actualiza solo ese campo
-  }));
+    const { name, value } = e.target;
+    setUsuario((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Invoca la funcion para validar, muestra errores y si no hay, envia el objeto usuario mediante onSubmit a UsuarioPage para insertarlo
   const handleSubmit = async () => {
     const erroresValidacion = await validarUsuario();
-
     if (erroresValidacion.length > 0) {
       setErrores(erroresValidacion);
       return;
     }
 
     setErrores([]);
-    
-    // Creamos FormData para enviar usuario + foto
     const formData = new FormData();
-
     const usuarioDTO = {
       nombre: usuario.nombre,
       apellido: usuario.apellido,
@@ -146,50 +128,47 @@ export const CrearUsuarioFormPage: React.FC<CrearUsuarioFormPageProps> = ({ onCl
     };
 
     formData.append("usuarioDTO", new Blob([JSON.stringify(usuarioDTO)], { type: "application/json" }));
-
-    if (fotoPerfilFile) {
-      formData.append("foto", fotoPerfilFile);
-    }
-
-    // Llamamos al onSubmit que ahora debería enviar FormData al context
+    if (fotoPerfilFile) formData.append("foto", fotoPerfilFile);
     await onSubmit(formData);
   };
 
   return (
-    <Box sx={{ p: 4, width: 500, display: 'flex', flexDirection: 'column', gap: 2 }}>
-      <Typography variant="h5" gutterBottom>
+    <Box
+      sx={{
+        p: { xs: 2, sm: 4 },
+        width: { xs: '100%', sm: 450 },
+        maxWidth: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 2,
+      }}
+    >
+      <Typography variant="h6" fontWeight="bold" textAlign="center">
         Agregar nuevo usuario
       </Typography>
 
-      {/* Vista previa de imagen recortada */}
+      {/* Vista previa de imagen */}
       <Box sx={{ display: 'flex', justifyContent: 'center' }}>
         <img
-          src={fotoPreview ?? "src/assets/placeholder.png"} // o null
+          src={fotoPreview ?? "src/assets/placeholder.png"}
           alt="Vista previa"
           style={{
-            width: 120,
-            height: 120,
+            width: 100,
+            height: 100,
             borderRadius: '50%',
             objectFit: 'cover',
             border: '2px solid #ccc',
-            backgroundColor: '#f0f0f0', // color de fondo cuando está vacío
-            display: 'block',
+            backgroundColor: '#f0f0f0',
           }}
         />
       </Box>
-    
-      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-      {/* Input para subir imagen */}
-      <TextField
-        type="file"
-        inputProps={{ accept: "image/*" }}
-        InputLabelProps={{ shrink: true }}
-        label="Foto de perfil"
-        onChange={handleImageChange}
-      />
 
-      
-      {/* Modal de recorte */}
+      <Button variant="outlined" component="label" sx={{ alignSelf: 'center' }}>
+        Subir foto de perfil
+        <input hidden type="file" accept="image/*" onChange={handleImageChange} />
+      </Button>
+
+      {/* Cropper modal */}
       <Dialog open={openCropper} onClose={() => setOpenCropper(false)} maxWidth="sm" fullWidth>
         <Box sx={{ position: 'relative', width: '100%', height: 400, background: '#333' }}>
           <Cropper
@@ -212,16 +191,18 @@ export const CrearUsuarioFormPage: React.FC<CrearUsuarioFormPageProps> = ({ onCl
           </Box>
         </Box>
       </Dialog>
-    </Box>
-      <TextField label="Nombre" name="nombre" value={usuario.nombre} onChange={handleChange} />
-      <TextField label="Apellido" name="apellido" value={usuario.apellido} onChange={handleChange} />
-      <TextField label="Email" name="email" value={usuario.email} onChange={handleChange} />
-      <TextField label="Clave" name="clave" type="password" value={usuario.clave} onChange={handleChange} />
-      <TextField label="Repetir clave" type="password" value={repetirClave} onChange={(e) => setRepetirClave(e.target.value)} />
-      <TextField label="Teléfono" name="telefono" value={usuario.telefono} onChange={handleChange} />
+
+      {/* Inputs */}
+      <TextField label="Nombre" name="nombre" value={usuario.nombre} onChange={handleChange} fullWidth />
+      <TextField label="Apellido" name="apellido" value={usuario.apellido} onChange={handleChange} fullWidth />
+      <TextField label="Email" name="email" value={usuario.email} onChange={handleChange} fullWidth />
+      <TextField label="Clave" name="clave" type="password" value={usuario.clave} onChange={handleChange} fullWidth />
+      <TextField label="Repetir clave" type="password" value={repetirClave} onChange={(e) => setRepetirClave(e.target.value)} fullWidth />
+      <TextField label="Teléfono" name="telefono" value={usuario.telefono} onChange={handleChange} fullWidth />
+
       <FormControl fullWidth>
         <InputLabel id="rol-label">Rol</InputLabel>
-        <Select labelId="rol-label" name="rol" value={usuario.rol} label="Rol" onChange={handleChange} >
+        <Select labelId="rol-label" name="rol" value={usuario.rol} label="Rol" onChange={handleChange}>
           {roles.map((rol, i) => (
             <MenuItem key={i} value={rol.nombre}>
               {rol.nombre}
@@ -230,18 +211,21 @@ export const CrearUsuarioFormPage: React.FC<CrearUsuarioFormPageProps> = ({ onCl
         </Select>
       </FormControl>
 
-       {/* Mostrar errores si existen */}
-      {errores.length > 0 ? (
-      <Alert severity="error">
-        {errores.map((err, i) => (
-          <div key={i}>• {err}</div>
-        ))}
-      </Alert>
-    ) : null}
+      {errores.length > 0 && (
+        <Alert severity="error">
+          {errores.map((err, i) => (
+            <div key={i}>• {err}</div>
+          ))}
+        </Alert>
+      )}
 
-      <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, mt: 2 }}>
-        <Button variant="outlined" onClick={onClose}>Cancelar</Button>
-        <Button variant="contained" onClick={handleSubmit}>Agregar</Button>
+      <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, mt: 2, flexWrap: 'wrap' }}>
+        <Button variant="outlined" onClick={onClose} fullWidth={true} sx={{ flex: { xs: '1 1 100%', sm: '0 0 auto' } }}>
+          Cancelar
+        </Button>
+        <Button variant="contained" onClick={handleSubmit} fullWidth={true} sx={{ flex: { xs: '1 1 100%', sm: '0 0 auto' } }}>
+          Agregar
+        </Button>
       </Box>
     </Box>
   );

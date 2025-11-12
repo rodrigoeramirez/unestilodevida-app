@@ -36,6 +36,14 @@ export const CelulasPage: React.FC = () => {
     });
   };
 
+  // Funcion para verificar si el usuario logueado tiene permisos para Eliminar la celula
+  const puedeAgregar = () => {
+    const usuarioRol = localStorage.getItem("usuarioRol") || "";
+     if (!usuarioRol) return false;
+    // Solo admin puede agregar
+    return usuarioRol === 'ADMIN';
+  };
+
   // filtrar
   const filtrarCelulas = React.useMemo(() => {
     return celulas.filter(c => {
@@ -86,7 +94,7 @@ export const CelulasPage: React.FC = () => {
       Swal.fire({ title: "¡Creada!", text: "La celula fue creada exitosamente.", icon: "success", confirmButtonText: "Aceptar" });
     } catch (error:any) {
       if (error.response?.status == 400) {
-        Swal.fire({ title: "¡Datos invalidos!", text: "Revisa los datos ingresados, vuelve a intentarlo!", icon: "warning", confirmButtonText: "Aceptar" });
+        Swal.fire({ title: "¡Datos invalidos!", text: "Revisa los datos ingresados y vuelve a intentarlo!", icon: "warning", confirmButtonText: "Aceptar" });
       } else if (error.response?.status == 500) {
         Swal.fire({ title: "¡Error!", text: "Ocurrió un error en el servidor. Por favor, comuniquese con Sistemas.", icon: "error", confirmButtonText: "Aceptar" });
       } else {
@@ -125,7 +133,7 @@ export const CelulasPage: React.FC = () => {
       </Box>
 
       {/* Btn agregar */}
-      <Box sx={{ mb: 2 }}>
+      { puedeAgregar() && (<Box sx={{ mb: 2 }}>
         <Button
           variant="contained"
           color="primary"
@@ -136,7 +144,7 @@ export const CelulasPage: React.FC = () => {
         >
           Agregar Nueva Célula
         </Button>
-      </Box>
+      </Box>)}
 
       {/* Filtros (arriba) */}
       <Paper elevation={3} sx={{ p: 3, mb: 3 }}>

@@ -83,21 +83,18 @@ const Login = () => {
         
       } catch (error: any) {
         // ⚠️ Si el backend devuelve 401 (no autorizado)
-        if (error.response?.status === 401 || error.response?.status === 403) {
+        if (error.response?.status === 401) {
         setErrorMessage("Email o clave incorrectos");
+        } else if (error.response?.status === 403) {
+          setErrorMessage("No tenes permiso para acceder o el usuario fue dado de baja");
         } else {
         // Cualquier otro tipo de error
         setErrorMessage(
-            error.response?.data?.message || "Ocurrió un error. Inténtalo nuevamente."
+            error.response?.data?.message || "Ocurrió un error. Comuniquese con Sistemas"
         );
         }
     }
     }
-  };
-
-  // Función para manejar el clic en el botón "Registrarme".
-  const handleRegisterClick = () => {
-    navigate("/register");
   };
 
   // Función para manejar el clic en "¿Olvidaste tu contraseña?"
@@ -164,7 +161,7 @@ const Login = () => {
           <TextField
             label="Clave"
             name="clave"
-            type={showClave ? "text" : "clave"} // Cambia entre texto y contraseña
+            type={showClave ? "text" : "password"}
             value={form.clave}
             onChange={handleChange}
             fullWidth
@@ -177,7 +174,7 @@ const Login = () => {
                   <IconButton
                     onClick={() => setShowClave(!showClave)}
                     edge="end"
-                    tabIndex={-1} // Evita que el botón reciba foco en tabulación
+                    tabIndex={-1}
                   >
                     {showClave ? <VisibilityOff /> : <Visibility />}
                   </IconButton>
@@ -188,15 +185,6 @@ const Login = () => {
 
           <Button type="submit" variant="contained" fullWidth sx={{ mt: 2 }}>
             Iniciar Sesión
-          </Button>
-
-          <Button
-            variant="outlined"
-            fullWidth
-            sx={{ mt: 2 }}
-            onClick={handleRegisterClick}
-          >
-            Registrarme
           </Button>
 
           <Typography variant="body2" sx={{ mt: 2, textAlign: "center" }}>

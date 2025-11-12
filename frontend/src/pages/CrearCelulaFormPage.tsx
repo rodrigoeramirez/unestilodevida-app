@@ -14,6 +14,8 @@ import { MapaSelector } from '../components/MapaSelector';
 import 'leaflet/dist/leaflet.css';
 import Paper from '@mui/material/Paper';
 import UsuarioSelect from '../components/UsuarioSelect';
+import { InputAdornment, Tooltip } from '@mui/material';
+import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
 
 interface CrearCelulaFormPageProps {
   onClose: () => void;
@@ -182,7 +184,26 @@ export const CrearCelulaFormPage: React.FC<CrearCelulaFormPageProps> = ({ onClos
                 required={true}
               />
             
-              <TextField required fullWidth label="Teléfono" name="telefono" value={celula.telefono} onChange={handleChange} />
+              <TextField
+                required
+                fullWidth
+                label="Teléfono"
+                name="telefono"
+                value={celula.telefono}
+                onChange={handleChange}
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <Tooltip
+                        title="Este teléfono corresponde a la célula, no necesariamente al líder. Es para que los usuarios puedan comunicarse con la célula."
+                        arrow
+                      >
+                        <HelpOutlineIcon fontSize="small" color="action" />
+                      </Tooltip>
+                    </InputAdornment>
+                  ),
+                }}
+              />
               
               <div>
                 <p className='mb-2'>Opcional</p>
